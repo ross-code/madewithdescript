@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Project, ProjectCategory } from '@/types/project';
 import { toast } from 'sonner';
+import { getProjectImage } from '@/data/projectImages';
 
 interface DbProject {
   id: string;
@@ -20,7 +21,7 @@ const mapDbToProject = (db: DbProject): Project => ({
   name: db.name,
   description: db.description,
   url: db.url,
-  imageUrl: db.image_url,
+  imageUrl: getProjectImage(db.name, db.image_url),
   category: db.category as ProjectCategory,
   featured: db.featured,
   createdAt: new Date(db.created_at),
