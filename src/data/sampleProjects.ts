@@ -60,7 +60,7 @@ export const sampleProjects: Project[] = [
   {
     id: '5',
     name: 'Aaron Makelky',
-    description: 'Creative content and storytelling from Aaron Makelky',
+    description: '🤖AI Teacher & Consultant',
     url: 'https://www.youtube.com/@AaronMakelky',
     imageUrl: aaronMakelky,
     category: 'youtube',
