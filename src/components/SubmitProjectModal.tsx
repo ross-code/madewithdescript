@@ -145,7 +145,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg glass border-border">
+      <DialogContent className="sm:max-w-lg glass border-border max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl gradient-text">
             Submit Your Project
@@ -207,7 +207,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
               <div className="flex gap-2">
                 <Button
                   type="button"
-                  variant={imageMode === 'upload' ? 'default' : 'ghost'}
+                  variant={imageMode === 'upload' ? 'secondary' : 'ghost'}
                   size="sm"
                   onClick={() => {
                     setImageMode('upload');
@@ -220,7 +220,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
                 </Button>
                 <Button
                   type="button"
-                  variant={imageMode === 'url' ? 'default' : 'ghost'}
+                  variant={imageMode === 'url' ? 'secondary' : 'ghost'}
                   size="sm"
                   onClick={() => {
                     setImageMode('url');

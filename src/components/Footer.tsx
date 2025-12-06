@@ -31,7 +31,7 @@ export const Footer = () => {
               YouTube
             </a>
             <a 
-              href="https://get.descript.com/8xmk53ga9yg5" 
+              href="https://descript.cello.so/bSaCOWa8OrH" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
