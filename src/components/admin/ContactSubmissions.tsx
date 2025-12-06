@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Loader2, Trash2, Mail, MailOpen, ExternalLink } from 'lucide-react';
+import { Loader2, Trash2, Mail, MailOpen, ExternalLink, Copy, Download } from 'lucide-react';
 
 interface ContactSubmission {
   id: string;
@@ -128,6 +128,24 @@ export const ContactSubmissions = () => {
 
   const unreadCount = submissions.filter(s => !s.read).length;
 
+  const copyEmails = () => {
+    const emails = submissions.map(s => s.email).join(', ');
+    navigator.clipboard.writeText(emails);
+    toast.success(`Copied ${submissions.length} email(s) to clipboard`);
+  };
+
+  const downloadEmails = () => {
+    const emails = submissions.map(s => s.email).join('\n');
+    const blob = new Blob([emails], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'contact-emails.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Downloaded ${submissions.length} email(s)`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -156,19 +174,31 @@ export const ContactSubmissions = () => {
           </span>
         </div>
 
-        {selectedIds.size > 0 && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleBulkMarkRead(true)}>
-              <MailOpen className="w-3 h-3 mr-1" /> Mark Read
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => handleBulkMarkRead(false)}>
-              <Mail className="w-3 h-3 mr-1" /> Mark Unread
-            </Button>
-            <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
-              <Trash2 className="w-3 h-3 mr-1" /> Delete
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {submissions.length > 0 && selectedIds.size === 0 && (
+            <>
+              <Button variant="outline" size="sm" onClick={copyEmails}>
+                <Copy className="w-3 h-3 mr-1" /> Copy Emails
+              </Button>
+              <Button variant="outline" size="sm" onClick={downloadEmails}>
+                <Download className="w-3 h-3 mr-1" /> Export
+              </Button>
+            </>
+          )}
+          {selectedIds.size > 0 && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => handleBulkMarkRead(true)}>
+                <MailOpen className="w-3 h-3 mr-1" /> Mark Read
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleBulkMarkRead(false)}>
+                <Mail className="w-3 h-3 mr-1" /> Mark Unread
+              </Button>
+              <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+                <Trash2 className="w-3 h-3 mr-1" /> Delete
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Messages List */}
