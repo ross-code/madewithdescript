@@ -47,6 +47,7 @@ export type Database = {
       projects: {
         Row: {
           category: string
+          consent_public_posting: boolean
           created_at: string
           description: string
           featured: boolean | null
@@ -54,11 +55,13 @@ export type Database = {
           image_url: string
           name: string
           status: string
+          submitter_email: string | null
           updated_at: string
           url: string
         }
         Insert: {
           category: string
+          consent_public_posting?: boolean
           created_at?: string
           description: string
           featured?: boolean | null
@@ -66,11 +69,13 @@ export type Database = {
           image_url: string
           name: string
           status?: string
+          submitter_email?: string | null
           updated_at?: string
           url: string
         }
         Update: {
           category?: string
+          consent_public_posting?: boolean
           created_at?: string
           description?: string
           featured?: boolean | null
@@ -78,6 +83,7 @@ export type Database = {
           image_url?: string
           name?: string
           status?: string
+          submitter_email?: string | null
           updated_at?: string
           url?: string
         }

@@ -11,6 +11,8 @@ export interface Project {
   createdAt: Date;
   featured?: boolean;
   status?: ProjectStatus;
+  submitterEmail?: string;
+  consentPublicPosting?: boolean;
 }
 
 export const categoryLabels: Record<ProjectCategory, string> = {

@@ -16,7 +16,7 @@ import { ContactSubmissions } from '@/components/admin/ContactSubmissions';
 import { toast } from 'sonner';
 import { 
   Loader2, Pencil, Trash2, Star, ArrowLeft, LogOut, 
-  Search, Filter, ArrowUpDown, X, ExternalLink, Check, XCircle, Clock, FolderOpen, Mail
+  Search, Filter, ArrowUpDown, X, ExternalLink, Check, XCircle, Clock, FolderOpen, Mail, Copy, Download
 } from 'lucide-react';
 
 type SortOption = 'newest' | 'oldest' | 'name-asc' | 'name-desc';
@@ -385,22 +385,65 @@ const Admin = () => {
                 </span>
               </div>
               
-              {selectedIds.size > 0 && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Button variant="outline" size="sm" className="text-green-600 border-green-600/30 hover:bg-green-600/10" onClick={() => handleBulkStatusChange('approved')}>
-                    <Check className="w-3 h-3 mr-1" /> Approve
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-red-600 border-red-600/30 hover:bg-red-600/10" onClick={() => handleBulkStatusChange('rejected')}>
-                    <XCircle className="w-3 h-3 mr-1" /> Reject
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleBulkToggleFeatured(true)}>
-                    <Star className="w-3 h-3 mr-1" /> Feature
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
-                    <Trash2 className="w-3 h-3 mr-1" /> Delete
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Email export buttons - always visible when no selection */}
+                {selectedIds.size === 0 && filteredProjects.some(p => p.submitterEmail) && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        const emails = filteredProjects
+                          .filter(p => p.submitterEmail)
+                          .map(p => p.submitterEmail)
+                          .join(', ');
+                        navigator.clipboard.writeText(emails);
+                        toast.success(`Copied ${filteredProjects.filter(p => p.submitterEmail).length} email(s)`);
+                      }}
+                    >
+                      <Copy className="w-3 h-3 mr-1" /> Copy Emails
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        const emails = filteredProjects
+                          .filter(p => p.submitterEmail)
+                          .map(p => p.submitterEmail)
+                          .join('\n');
+                        const blob = new Blob([emails], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'project-submitter-emails.txt';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast.success(`Downloaded ${filteredProjects.filter(p => p.submitterEmail).length} email(s)`);
+                      }}
+                    >
+                      <Download className="w-3 h-3 mr-1" /> Export
+                    </Button>
+                  </>
+                )}
+                
+                {/* Bulk action buttons - visible when items selected */}
+                {selectedIds.size > 0 && (
+                  <>
+                    <Button variant="outline" size="sm" className="text-green-600 border-green-600/30 hover:bg-green-600/10" onClick={() => handleBulkStatusChange('approved')}>
+                      <Check className="w-3 h-3 mr-1" /> Approve
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-red-600 border-red-600/30 hover:bg-red-600/10" onClick={() => handleBulkStatusChange('rejected')}>
+                      <XCircle className="w-3 h-3 mr-1" /> Reject
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleBulkToggleFeatured(true)}>
+                      <Star className="w-3 h-3 mr-1" /> Feature
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+                      <Trash2 className="w-3 h-3 mr-1" /> Delete
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Projects List */}
