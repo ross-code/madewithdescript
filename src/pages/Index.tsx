@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { SearchBar } from '@/components/SearchBar';
@@ -6,11 +6,12 @@ import { CategoryFilter } from '@/components/CategoryFilter';
 import { ProjectGrid } from '@/components/ProjectGrid';
 import { SubmitProjectModal } from '@/components/SubmitProjectModal';
 import { Footer } from '@/components/Footer';
-import { sampleProjects } from '@/data/sampleProjects';
-import { Project, ProjectCategory } from '@/types/project';
+import { useProjects } from '@/hooks/useProjects';
+import { ProjectCategory } from '@/types/project';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
-  const [projects, setProjects] = useState<Project[]>(sampleProjects);
+  const { projects, isLoading, addProject } = useProjects();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ProjectCategory | 'all'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,21 +45,23 @@ const Index = () => {
     return counts;
   }, [projects]);
 
-  const handleSubmitProject = (newProject: {
+  const handleSubmitProject = async (newProject: {
     name: string;
     description: string;
     url: string;
     imageUrl: string;
     category: ProjectCategory;
   }) => {
-    const project: Project = {
-      id: Date.now().toString(),
-      ...newProject,
-      createdAt: new Date(),
-    };
-    
-    setProjects((prev) => [project, ...prev]);
+    await addProject(newProject);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
