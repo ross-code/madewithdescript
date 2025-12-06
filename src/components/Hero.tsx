@@ -29,14 +29,14 @@ export const Hero = ({ onSubmitClick, projectCount }: HeroProps) => {
           </div>
 
           <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight">
-            <span className="gradient-text">Showcase</span>
+            <span className="gradient-text">Made With</span>
             <br />
-            <span className="text-foreground">Your Work</span>
+            <span className="text-foreground">Descript</span>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            A curated directory of podcasts, YouTube channels, courses, and creative projects. 
-            Share your work with the world and discover what others are building.
+            A curated directory of podcasts, YouTube channels, courses, and creative projects 
+            made using Descript. Submit your work and get featured.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
