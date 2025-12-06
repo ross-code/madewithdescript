@@ -134,7 +134,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
       setImageMode('upload');
       setIsSuccess(false);
       onClose();
-      toast.success('Project submitted successfully!');
+      toast.success('Project submitted! It will appear after admin approval.');
     }, 1500);
   };
 
@@ -161,7 +161,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
               Project Submitted!
             </h3>
             <p className="text-muted-foreground">
-              Your project is now live on the showcase.
+              Your project has been submitted for review. Once approved, it will appear on the showcase.
             </p>
           </div>
         ) : (

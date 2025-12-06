@@ -14,6 +14,7 @@ interface DbProject {
   featured: boolean;
   created_at: string;
   updated_at: string;
+  status: string;
 }
 
 const mapDbToProject = (db: DbProject): Project => ({
@@ -25,6 +26,7 @@ const mapDbToProject = (db: DbProject): Project => ({
   category: db.category as ProjectCategory,
   featured: db.featured,
   createdAt: new Date(db.created_at),
+  status: db.status as 'pending' | 'approved' | 'rejected',
 });
 
 export const useProjects = () => {
@@ -51,7 +53,7 @@ export const useProjects = () => {
     fetchProjects();
   }, []);
 
-  const addProject = async (project: Omit<Project, 'id' | 'createdAt'>) => {
+  const addProject = async (project: Omit<Project, 'id' | 'createdAt' | 'status'>) => {
     const { data, error } = await supabase
       .from('projects')
       .insert({
@@ -61,6 +63,7 @@ export const useProjects = () => {
         image_url: project.imageUrl,
         category: project.category,
         featured: project.featured || false,
+        status: 'pending',
       })
       .select()
       .single();
@@ -70,7 +73,23 @@ export const useProjects = () => {
       throw error;
     }
 
-    setProjects(prev => [mapDbToProject(data as DbProject), ...prev]);
+    // Send notification email
+    try {
+      await supabase.functions.invoke('notify-submission', {
+        body: {
+          projectName: project.name,
+          projectDescription: project.description,
+          projectUrl: project.url,
+          projectCategory: project.category,
+          projectId: data.id,
+        },
+      });
+    } catch (emailError) {
+      console.error('Failed to send notification email:', emailError);
+      // Don't throw - project was saved successfully
+    }
+
+    // Don't add to local state since it's pending and won't show for non-admins
     return data;
   };
 
@@ -82,6 +101,7 @@ export const useProjects = () => {
     if (updates.imageUrl !== undefined) dbUpdates.image_url = updates.imageUrl;
     if (updates.category !== undefined) dbUpdates.category = updates.category;
     if (updates.featured !== undefined) dbUpdates.featured = updates.featured;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
 
     const { error } = await supabase
       .from('projects')
