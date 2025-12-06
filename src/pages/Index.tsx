@@ -5,10 +5,11 @@ import { SearchBar } from '@/components/SearchBar';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { ProjectGrid } from '@/components/ProjectGrid';
 import { SubmitProjectModal } from '@/components/SubmitProjectModal';
+import { ContactForm } from '@/components/ContactForm';
 import { Footer } from '@/components/Footer';
 import { useProjects } from '@/hooks/useProjects';
 import { ProjectCategory } from '@/types/project';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MessageCircle } from 'lucide-react';
 
 const Index = () => {
   const { projects, isLoading, addProject } = useProjects();
@@ -84,6 +85,25 @@ const Index = () => {
             />
 
             <ProjectGrid projects={filteredProjects} />
+          </div>
+        </section>
+
+        {/* Contact Section */}
+        <section id="contact" className="container mx-auto px-4 py-16">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-border mb-4">
+                <MessageCircle className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-muted-foreground">Get in Touch</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
+                Have Questions?
+              </h2>
+              <p className="text-muted-foreground">
+                We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+              </p>
+            </div>
+            <ContactForm />
           </div>
         </section>
       </main>
