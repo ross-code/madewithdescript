@@ -1,4 +1,5 @@
 export type ProjectCategory = 'podcast' | 'youtube' | 'course' | 'tool' | 'other';
+export type ProjectStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Project {
   id: string;
@@ -9,6 +10,7 @@ export interface Project {
   category: ProjectCategory;
   createdAt: Date;
   featured?: boolean;
+  status?: ProjectStatus;
 }
 
 export const categoryLabels: Record<ProjectCategory, string> = {
@@ -25,4 +27,16 @@ export const categoryColors: Record<ProjectCategory, string> = {
   course: 'bg-category-course',
   tool: 'bg-category-tool',
   other: 'bg-category-other',
+};
+
+export const statusLabels: Record<ProjectStatus, string> = {
+  pending: 'Pending Review',
+  approved: 'Approved',
+  rejected: 'Rejected',
+};
+
+export const statusColors: Record<ProjectStatus, string> = {
+  pending: 'bg-yellow-500/20 text-yellow-600',
+  approved: 'bg-green-500/20 text-green-600',
+  rejected: 'bg-red-500/20 text-red-600',
 };

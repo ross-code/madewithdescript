@@ -10,14 +10,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
-import { Project, ProjectCategory, categoryLabels } from '@/types/project';
+import { Project, ProjectCategory, ProjectStatus, categoryLabels, statusLabels, statusColors } from '@/types/project';
 import { toast } from 'sonner';
 import { 
   Loader2, Pencil, Trash2, Star, ArrowLeft, LogOut, 
-  Search, Filter, ArrowUpDown, X, ExternalLink, Check
+  Search, Filter, ArrowUpDown, X, ExternalLink, Check, XCircle, Clock
 } from 'lucide-react';
 
 type SortOption = 'newest' | 'oldest' | 'name-asc' | 'name-desc';
+type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 
 const sortLabels: Record<SortOption, string> = {
   'newest': 'Newest First',
@@ -34,7 +35,7 @@ const Admin = () => {
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<ProjectCategory | 'all'>('all');
-  const [featuredFilter, setFeaturedFilter] = useState<'all' | 'featured' | 'not-featured'>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   
   // Selection state for bulk actions
@@ -78,11 +79,9 @@ const Admin = () => {
       result = result.filter(p => p.category === categoryFilter);
     }
     
-    // Featured filter
-    if (featuredFilter === 'featured') {
-      result = result.filter(p => p.featured);
-    } else if (featuredFilter === 'not-featured') {
-      result = result.filter(p => !p.featured);
+    // Status filter
+    if (statusFilter !== 'all') {
+      result = result.filter(p => p.status === statusFilter);
     }
     
     // Sort
@@ -102,14 +101,15 @@ const Admin = () => {
     });
     
     return result;
-  }, [projects, searchQuery, categoryFilter, featuredFilter, sortBy]);
+  }, [projects, searchQuery, categoryFilter, statusFilter, sortBy]);
 
-  const hasActiveFilters = searchQuery || categoryFilter !== 'all' || featuredFilter !== 'all';
+  const pendingCount = projects.filter(p => p.status === 'pending').length;
+  const hasActiveFilters = searchQuery || categoryFilter !== 'all' || statusFilter !== 'all';
 
   const clearFilters = () => {
     setSearchQuery('');
     setCategoryFilter('all');
-    setFeaturedFilter('all');
+    setStatusFilter('all');
   };
 
   const toggleSelectAll = () => {
@@ -149,6 +149,18 @@ const Admin = () => {
     try {
       await Promise.all([...selectedIds].map(id => updateProject(id, { featured })));
       toast.success(`Updated ${selectedIds.size} project(s)`);
+      setSelectedIds(new Set());
+    } catch {
+      toast.error('Failed to update some projects');
+    }
+  };
+
+  const handleBulkStatusChange = async (status: ProjectStatus) => {
+    if (selectedIds.size === 0) return;
+    
+    try {
+      await Promise.all([...selectedIds].map(id => updateProject(id, { status })));
+      toast.success(`${status === 'approved' ? 'Approved' : 'Rejected'} ${selectedIds.size} project(s)`);
       setSelectedIds(new Set());
     } catch {
       toast.error('Failed to update some projects');
@@ -209,6 +221,15 @@ const Admin = () => {
     }
   };
 
+  const handleStatusChange = async (project: Project, status: ProjectStatus) => {
+    try {
+      await updateProject(project.id, { status });
+      toast.success(`Project ${status === 'approved' ? 'approved' : 'rejected'}!`);
+    } catch {
+      toast.error('Failed to update status');
+    }
+  };
+
   if (authLoading || projectsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -237,6 +258,24 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6">
+        {/* Pending Alert */}
+        {pendingCount > 0 && (
+          <div className="glass border border-yellow-500/30 bg-yellow-500/10 rounded-lg p-4 mb-6 flex items-center gap-3">
+            <Clock className="w-5 h-5 text-yellow-600" />
+            <span className="text-sm text-yellow-600 font-medium">
+              {pendingCount} project{pendingCount > 1 ? 's' : ''} awaiting review
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="ml-auto border-yellow-600/30 text-yellow-600 hover:bg-yellow-600/10"
+              onClick={() => setStatusFilter('pending')}
+            >
+              View Pending
+            </Button>
+          </div>
+        )}
+
         {/* Search and Filters */}
         <div className="glass border border-border rounded-lg p-4 mb-6 space-y-4">
           {/* Search Bar */}
@@ -279,14 +318,15 @@ const Admin = () => {
               </SelectContent>
             </Select>
             
-            <Select value={featuredFilter} onValueChange={(v) => setFeaturedFilter(v as 'all' | 'featured' | 'not-featured')}>
-              <SelectTrigger className="w-[140px] glass border-border">
-                <SelectValue placeholder="Featured" />
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+              <SelectTrigger className="w-[150px] glass border-border">
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="glass border-border">
-                <SelectItem value="all">All Projects</SelectItem>
-                <SelectItem value="featured">Featured Only</SelectItem>
-                <SelectItem value="not-featured">Not Featured</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
             
@@ -328,12 +368,15 @@ const Admin = () => {
           </div>
           
           {selectedIds.size > 0 && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="text-green-600 border-green-600/30 hover:bg-green-600/10" onClick={() => handleBulkStatusChange('approved')}>
+                <Check className="w-3 h-3 mr-1" /> Approve
+              </Button>
+              <Button variant="outline" size="sm" className="text-red-600 border-red-600/30 hover:bg-red-600/10" onClick={() => handleBulkStatusChange('rejected')}>
+                <XCircle className="w-3 h-3 mr-1" /> Reject
+              </Button>
               <Button variant="outline" size="sm" onClick={() => handleBulkToggleFeatured(true)}>
                 <Star className="w-3 h-3 mr-1" /> Feature
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handleBulkToggleFeatured(false)}>
-                <Star className="w-3 h-3 mr-1 opacity-50" /> Unfeature
               </Button>
               <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
                 <Trash2 className="w-3 h-3 mr-1" /> Delete
@@ -370,6 +413,12 @@ const Admin = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-foreground truncate">{project.name}</h3>
+                    <Badge className={`text-xs ${statusColors[project.status || 'pending']}`}>
+                      {project.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
+                      {project.status === 'approved' && <Check className="w-3 h-3 mr-1" />}
+                      {project.status === 'rejected' && <XCircle className="w-3 h-3 mr-1" />}
+                      {statusLabels[project.status || 'pending']}
+                    </Badge>
                     {project.featured && (
                       <Badge variant="secondary" className="text-xs">
                         <Star className="w-3 h-3 mr-1 fill-current" /> Featured
@@ -393,6 +442,28 @@ const Admin = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  {project.status === 'pending' && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleStatusChange(project, 'approved')}
+                        title="Approve"
+                        className="text-green-600 hover:text-green-700 hover:bg-green-600/10"
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleStatusChange(project, 'rejected')}
+                        title="Reject"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-600/10"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
