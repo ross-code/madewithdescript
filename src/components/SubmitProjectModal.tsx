@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { ProjectCategory, categoryLabels } from '@/types/project';
 import { toast } from 'sonner';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2, CheckCircle2, Upload, Link, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SubmitProjectModalProps {
   isOpen: boolean;
@@ -24,6 +25,12 @@ interface SubmitProjectModalProps {
 export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageMode, setImageMode] = useState<'upload' | 'url'>('upload');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -31,6 +38,54 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
     imageUrl: '',
     category: '' as ProjectCategory | '',
   });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file');
+        return;
+      }
+      setUploadedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setFormData(prev => ({ ...prev, imageUrl: '' }));
+    }
+  };
+
+  const clearUploadedFile = () => {
+    setUploadedFile(null);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from('project-images')
+      .upload(fileName, file);
+    
+    if (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
+    
+    const { data: urlData } = supabase.storage
+      .from('project-images')
+      .getPublicUrl(data.path);
+    
+    return urlData.publicUrl;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,14 +97,31 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
 
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    let finalImageUrl = formData.imageUrl;
+    
+    // Upload file if one was selected
+    if (uploadedFile) {
+      setIsUploading(true);
+      const uploadedUrl = await uploadImage(uploadedFile);
+      setIsUploading(false);
+      
+      if (uploadedUrl) {
+        finalImageUrl = uploadedUrl;
+      } else {
+        toast.error('Failed to upload image. Using default image instead.');
+      }
+    }
+    
+    // Use default image if no image provided
+    if (!finalImageUrl) {
+      finalImageUrl = `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=400&fit=crop`;
+    }
     
     onSubmit({
       name: formData.name,
       description: formData.description,
       url: formData.url,
-      imageUrl: formData.imageUrl || `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=400&fit=crop`,
+      imageUrl: finalImageUrl,
       category: formData.category as ProjectCategory,
     });
 
@@ -58,14 +130,21 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
     
     setTimeout(() => {
       setFormData({ name: '', description: '', url: '', imageUrl: '', category: '' });
+      clearUploadedFile();
+      setImageMode('upload');
       setIsSuccess(false);
       onClose();
       toast.success('Project submitted successfully!');
     }, 1500);
   };
 
+  const handleClose = () => {
+    clearUploadedFile();
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg glass border-border">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl gradient-text">
@@ -121,16 +200,102 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="imageUrl">Image URL (optional)</Label>
-              <Input
-                id="imageUrl"
-                type="url"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-                placeholder="https://example.com/image.jpg"
-                className="glass border-border"
-              />
+            <div className="space-y-3">
+              <Label>Project Image (optional)</Label>
+              
+              {/* Toggle between upload and URL */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={imageMode === 'upload' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => {
+                    setImageMode('upload');
+                    setFormData(prev => ({ ...prev, imageUrl: '' }));
+                  }}
+                  className="flex-1"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload
+                </Button>
+                <Button
+                  type="button"
+                  variant={imageMode === 'url' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => {
+                    setImageMode('url');
+                    clearUploadedFile();
+                  }}
+                  className="flex-1"
+                >
+                  <Link className="w-4 h-4 mr-2" />
+                  URL
+                </Button>
+              </div>
+
+              {imageMode === 'upload' ? (
+                <div className="space-y-3">
+                  {previewUrl ? (
+                    <div className="relative">
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="w-full h-32 object-cover rounded-lg border border-border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 w-8 h-8"
+                        onClick={clearUploadedFile}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    >
+                      <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        Click to upload an image
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Max 5MB, JPG/PNG/GIF
+                      </p>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    id="imageUrl"
+                    type="url"
+                    value={formData.imageUrl}
+                    onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                    placeholder="https://example.com/image.jpg"
+                    className="glass border-border"
+                  />
+                  {formData.imageUrl && (
+                    <img
+                      src={formData.imageUrl}
+                      alt="Preview"
+                      className="w-full h-32 object-cover rounded-lg border border-border"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
                 Leave empty for a default image
               </p>
@@ -159,7 +324,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
               <Button
                 type="button"
                 variant="ghost"
-                onClick={onClose}
+                onClick={handleClose}
                 className="flex-1"
               >
                 Cancel
@@ -167,13 +332,13 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
               <Button
                 type="submit"
                 variant="gradient"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isUploading}
                 className="flex-1"
               >
-                {isSubmitting ? (
+                {isSubmitting || isUploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Submitting...
+                    {isUploading ? 'Uploading...' : 'Submitting...'}
                   </>
                 ) : (
                   'Submit Project'
