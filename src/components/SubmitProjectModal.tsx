@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ProjectCategory, categoryLabels } from '@/types/project';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle2, Upload, Link, X } from 'lucide-react';
@@ -19,6 +20,8 @@ interface SubmitProjectModalProps {
     url: string;
     imageUrl: string;
     category: ProjectCategory;
+    submitterEmail?: string;
+    consentPublicPosting?: boolean;
   }) => void;
 }
 
@@ -37,6 +40,8 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
     url: '',
     imageUrl: '',
     category: '' as ProjectCategory | '',
+    email: '',
+    consentPublicPosting: false,
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,8 +95,13 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.description || !formData.url || !formData.category) {
+    if (!formData.name || !formData.description || !formData.url || !formData.category || !formData.email) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (!formData.consentPublicPosting) {
+      toast.error('Please consent to the public posting of your project');
       return;
     }
 
@@ -123,13 +133,15 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
       url: formData.url,
       imageUrl: finalImageUrl,
       category: formData.category as ProjectCategory,
+      submitterEmail: formData.email,
+      consentPublicPosting: formData.consentPublicPosting,
     });
 
     setIsSubmitting(false);
     setIsSuccess(true);
     
     setTimeout(() => {
-      setFormData({ name: '', description: '', url: '', imageUrl: '', category: '' });
+      setFormData({ name: '', description: '', url: '', imageUrl: '', category: '', email: '', consentPublicPosting: false });
       clearUploadedFile();
       setImageMode('upload');
       setIsSuccess(false);
@@ -318,6 +330,38 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Your Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="your@email.com"
+                className="glass border-border"
+              />
+              <p className="text-xs text-muted-foreground">
+                We'll use this to notify you about your submission status
+              </p>
+            </div>
+
+            <div className="flex items-start gap-3 p-4 rounded-lg border border-border bg-muted/30">
+              <Checkbox
+                id="consent"
+                checked={formData.consentPublicPosting}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, consentPublicPosting: checked === true }))}
+                className="mt-0.5"
+              />
+              <div className="space-y-1">
+                <Label htmlFor="consent" className="text-sm font-medium cursor-pointer">
+                  I consent to the public posting of my project *
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  By checking this box, you agree that your project name, description, URL, and image may be publicly displayed on this showcase.
+                </p>
+              </div>
             </div>
 
             <div className="flex gap-3 pt-4">

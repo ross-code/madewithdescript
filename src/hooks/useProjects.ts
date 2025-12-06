@@ -15,6 +15,8 @@ interface DbProject {
   created_at: string;
   updated_at: string;
   status: string;
+  submitter_email: string | null;
+  consent_public_posting: boolean;
 }
 
 const mapDbToProject = (db: DbProject): Project => ({
@@ -27,6 +29,8 @@ const mapDbToProject = (db: DbProject): Project => ({
   featured: db.featured,
   createdAt: new Date(db.created_at),
   status: db.status as 'pending' | 'approved' | 'rejected',
+  submitterEmail: db.submitter_email || undefined,
+  consentPublicPosting: db.consent_public_posting,
 });
 
 export const useProjects = () => {
@@ -64,6 +68,8 @@ export const useProjects = () => {
         category: project.category,
         featured: project.featured || false,
         status: 'pending',
+        submitter_email: project.submitterEmail || null,
+        consent_public_posting: project.consentPublicPosting || false,
       })
       .select()
       .single();
