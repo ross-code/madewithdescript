@@ -12,9 +12,54 @@ interface ContactRequest {
   message: string;
 }
 
+// Simple in-memory rate limiting
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 5; // Max requests per window
+const RATE_WINDOW_MS = 60000; // 1 minute window
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW_MS });
+    return false;
+  }
+  
+  if (record.count >= RATE_LIMIT) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
+
+// Escape HTML to prevent injection in email templates
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting check
+  const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+                   req.headers.get("cf-connecting-ip") || 
+                   "unknown";
+  
+  if (isRateLimited(clientIP)) {
+    console.log("Rate limit exceeded for IP:", clientIP);
+    return new Response(
+      JSON.stringify({ error: "Too many requests. Please try again later." }),
+      { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
   }
 
   try {
@@ -22,10 +67,27 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending contact email from:", name, email);
 
-    // Validate inputs
+    // Validate inputs with length limits
     if (!name || !email || !message) {
       return new Response(
         JSON.stringify({ error: "Name, email, and message are required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Enforce max length limits
+    if (name.length > 100 || email.length > 255 || message.length > 5000 || (subject && subject.length > 200)) {
+      return new Response(
+        JSON.stringify({ error: "Input exceeds maximum length" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -40,6 +102,12 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+
+    // Escape HTML entities for safe email rendering
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safeSubject = subject ? escapeHtml(subject) : '';
+    const safeMessage = escapeHtml(message);
 
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -60,16 +128,16 @@ const handler = async (req: Request): Promise<Response> => {
               <table style="width: 100%;">
                 <tr>
                   <td style="color: #888; padding: 8px 0; width: 80px;">From:</td>
-                  <td style="color: #333; font-weight: 500;">${name}</td>
+                  <td style="color: #333; font-weight: 500;">${safeName}</td>
                 </tr>
                 <tr>
                   <td style="color: #888; padding: 8px 0;">Email:</td>
-                  <td><a href="mailto:${email}" style="color: #6366f1;">${email}</a></td>
+                  <td><a href="mailto:${safeEmail}" style="color: #6366f1;">${safeEmail}</a></td>
                 </tr>
-                ${subject ? `
+                ${safeSubject ? `
                 <tr>
                   <td style="color: #888; padding: 8px 0;">Subject:</td>
-                  <td style="color: #333;">${subject}</td>
+                  <td style="color: #333;">${safeSubject}</td>
                 </tr>
                 ` : ''}
               </table>
@@ -77,11 +145,11 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div style="background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 20px; margin: 20px 0;">
               <h3 style="color: #333; margin-top: 0;">Message:</h3>
-              <p style="color: #666; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+              <p style="color: #666; line-height: 1.6; white-space: pre-wrap;">${safeMessage}</p>
             </div>
             
             <p style="color: #888; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-              You can reply directly to this email to respond to ${name}.
+              You can reply directly to this email to respond to ${safeName}.
             </p>
           </div>
         `,
@@ -106,7 +174,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in send-contact function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "An error occurred processing your request" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
