@@ -16,8 +16,9 @@ import { ContactSubmissions } from '@/components/admin/ContactSubmissions';
 import { toast } from 'sonner';
 import { 
   Loader2, Pencil, Trash2, Star, ArrowLeft, LogOut, 
-  Search, Filter, ArrowUpDown, X, ExternalLink, Check, XCircle, Clock, FolderOpen, Mail, Copy, Download
+  Search, Filter, ArrowUpDown, X, ExternalLink, Check, XCircle, Clock, FolderOpen, Mail, Copy, Download, Upload
 } from 'lucide-react';
+import { useImageUpload } from '@/hooks/useImageUpload';
 
 type SortOption = 'newest' | 'oldest' | 'name-asc' | 'name-desc';
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
@@ -32,6 +33,7 @@ const sortLabels: Record<SortOption, string> = {
 const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, signOut } = useAuth();
   const { projects, isLoading: projectsLoading, updateProject, deleteProject } = useProjects();
+  const { uploadImage, isUploading } = useImageUpload();
   const navigate = useNavigate();
   
   // Search and filter state
@@ -586,13 +588,43 @@ const Admin = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-imageUrl">Image URL</Label>
-              <Input
-                id="edit-imageUrl"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-                className="glass border-border"
-              />
+              <Label htmlFor="edit-imageUrl">Image</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="edit-imageUrl"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                  className="glass border-border flex-1"
+                  placeholder="Image URL"
+                />
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const url = await uploadImage(file);
+                        if (url) {
+                          setFormData(prev => ({ ...prev, imageUrl: url }));
+                          toast.success('Image uploaded!');
+                        }
+                      }
+                      e.target.value = '';
+                    }}
+                    disabled={isUploading}
+                  />
+                  <Button type="button" variant="outline" disabled={isUploading} asChild>
+                    <span>
+                      {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    </span>
+                  </Button>
+                </label>
+              </div>
+              {formData.imageUrl && (
+                <img src={formData.imageUrl} alt="Preview" className="w-full h-32 object-cover rounded-lg mt-2" />
+              )}
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
