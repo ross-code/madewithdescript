@@ -16,9 +16,10 @@ import { ContactSubmissions } from '@/components/admin/ContactSubmissions';
 import { toast } from 'sonner';
 import { 
   Loader2, Pencil, Trash2, Star, ArrowLeft, LogOut, 
-  Search, Filter, ArrowUpDown, X, ExternalLink, Check, XCircle, Clock, FolderOpen, Mail, Copy, Download, Upload
+  Search, Filter, ArrowUpDown, X, ExternalLink, Check, XCircle, Clock, FolderOpen, Mail, Copy, Download, Upload, FileSpreadsheet
 } from 'lucide-react';
 import { useImageUpload } from '@/hooks/useImageUpload';
+import { useDataExport } from '@/hooks/useDataExport';
 
 type SortOption = 'newest' | 'oldest' | 'name-asc' | 'name-desc';
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
@@ -34,6 +35,7 @@ const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, signOut } = useAuth();
   const { projects, isLoading: projectsLoading, updateProject, deleteProject } = useProjects();
   const { uploadImage, isUploading } = useImageUpload();
+  const { exportProjectsToCSV } = useDataExport();
   const navigate = useNavigate();
   
   // Search and filter state
@@ -388,43 +390,56 @@ const Admin = () => {
               </div>
               
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Email export buttons - always visible when no selection */}
-                {selectedIds.size === 0 && filteredProjects.some(p => p.submitterEmail) && (
+                {/* Export buttons - always visible when no selection */}
+                {selectedIds.size === 0 && (
                   <>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        const emails = filteredProjects
-                          .filter(p => p.submitterEmail)
-                          .map(p => p.submitterEmail)
-                          .join(', ');
-                        navigator.clipboard.writeText(emails);
-                        toast.success(`Copied ${filteredProjects.filter(p => p.submitterEmail).length} email(s)`);
-                      }}
-                    >
-                      <Copy className="w-3 h-3 mr-1" /> Copy Emails
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        const emails = filteredProjects
-                          .filter(p => p.submitterEmail)
-                          .map(p => p.submitterEmail)
-                          .join('\n');
-                        const blob = new Blob([emails], { type: 'text/plain' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'project-submitter-emails.txt';
-                        a.click();
-                        URL.revokeObjectURL(url);
-                        toast.success(`Downloaded ${filteredProjects.filter(p => p.submitterEmail).length} email(s)`);
-                      }}
-                    >
-                      <Download className="w-3 h-3 mr-1" /> Export
-                    </Button>
+                    {filteredProjects.length > 0 && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => exportProjectsToCSV(filteredProjects as unknown as Record<string, unknown>[])}
+                      >
+                        <FileSpreadsheet className="w-3 h-3 mr-1" /> Export CSV
+                      </Button>
+                    )}
+                    {filteredProjects.some(p => p.submitterEmail) && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const emails = filteredProjects
+                              .filter(p => p.submitterEmail)
+                              .map(p => p.submitterEmail)
+                              .join(', ');
+                            navigator.clipboard.writeText(emails);
+                            toast.success(`Copied ${filteredProjects.filter(p => p.submitterEmail).length} email(s)`);
+                          }}
+                        >
+                          <Copy className="w-3 h-3 mr-1" /> Copy Emails
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            const emails = filteredProjects
+                              .filter(p => p.submitterEmail)
+                              .map(p => p.submitterEmail)
+                              .join('\n');
+                            const blob = new Blob([emails], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'project-submitter-emails.txt';
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            toast.success(`Downloaded ${filteredProjects.filter(p => p.submitterEmail).length} email(s)`);
+                          }}
+                        >
+                          <Download className="w-3 h-3 mr-1" /> Emails
+                        </Button>
+                      </>
+                    )}
                   </>
                 )}
                 

@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Loader2, Trash2, Mail, MailOpen, ExternalLink, Copy, Download } from 'lucide-react';
+import { Loader2, Trash2, Mail, MailOpen, ExternalLink, Copy, Download, FileSpreadsheet } from 'lucide-react';
+import { useDataExport } from '@/hooks/useDataExport';
 
 interface ContactSubmission {
   id: string;
@@ -20,6 +21,7 @@ export const ContactSubmissions = () => {
   const [submissions, setSubmissions] = useState<ContactSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { exportContactsToCSV } = useDataExport();
 
   const fetchSubmissions = async () => {
     const { data, error } = await supabase
@@ -181,7 +183,14 @@ export const ContactSubmissions = () => {
                 <Copy className="w-3 h-3 mr-1" /> Copy Emails
               </Button>
               <Button variant="outline" size="sm" onClick={downloadEmails}>
-                <Download className="w-3 h-3 mr-1" /> Export
+                <Download className="w-3 h-3 mr-1" /> Emails
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => exportContactsToCSV(submissions as unknown as Record<string, unknown>[])}
+              >
+                <FileSpreadsheet className="w-3 h-3 mr-1" /> Export CSV
               </Button>
             </>
           )}
