@@ -278,6 +278,10 @@ const Admin = () => {
               <Mail className="w-4 h-4" />
               Messages
             </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="w-4 h-4" />
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="projects" className="space-y-6">
