@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Project, ProjectCategory } from '@/types/project';
 import { toast } from 'sonner';
@@ -41,7 +41,7 @@ export const useProjects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     const { data, error } = await supabase
       .from('projects')
       .select('*')
@@ -67,11 +67,18 @@ export const useProjects = () => {
 
     setProjects((data as DbProject[]).map(db => mapDbToProject(db, submissionMap.get(db.id))));
     setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+
+    // Re-fetch when auth state changes (so admin can see submission data)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      fetchProjects();
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchProjects]);
 
   const addProject = async (project: Omit<Project, 'id' | 'createdAt' | 'status'>) => {
     const { data, error } = await supabase
