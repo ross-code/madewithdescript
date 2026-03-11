@@ -130,6 +130,23 @@ export const useProjects = () => {
       console.error('Failed to send notification email:', emailError);
     }
 
+    // Forward to webhook (Zapier, Make, etc.)
+    try {
+      await supabase.functions.invoke('forward-submission-webhook', {
+        body: {
+          projectName: project.name,
+          projectDescription: project.description,
+          projectUrl: project.url,
+          projectCategory: project.category,
+          projectId: data.id,
+          submitterEmail: project.submitterEmail,
+          imageUrl: project.imageUrl,
+        },
+      });
+    } catch (webhookError) {
+      console.error('Failed to forward to webhook:', webhookError);
+    }
+
     return data;
   };
 
