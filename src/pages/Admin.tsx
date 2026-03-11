@@ -571,6 +571,10 @@ const Admin = () => {
           <TabsContent value="messages">
             <ContactSubmissions />
           </TabsContent>
+
+          <TabsContent value="settings">
+            <AdminSettings />
+          </TabsContent>
         </Tabs>
       </main>
 
