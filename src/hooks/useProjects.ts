@@ -15,11 +15,15 @@ interface DbProject {
   created_at: string;
   updated_at: string;
   status: string;
+}
+
+interface DbProjectSubmission {
+  project_id: string;
   submitter_email: string | null;
   consent_public_posting: boolean;
 }
 
-const mapDbToProject = (db: DbProject): Project => ({
+const mapDbToProject = (db: DbProject, submission?: DbProjectSubmission): Project => ({
   id: db.id,
   name: db.name,
   description: db.description,
@@ -29,8 +33,8 @@ const mapDbToProject = (db: DbProject): Project => ({
   featured: db.featured,
   createdAt: new Date(db.created_at),
   status: db.status as 'pending' | 'approved' | 'rejected',
-  submitterEmail: db.submitter_email || undefined,
-  consentPublicPosting: db.consent_public_posting,
+  submitterEmail: submission?.submitter_email || undefined,
+  consentPublicPosting: submission?.consent_public_posting,
 });
 
 export const useProjects = () => {
@@ -49,7 +53,19 @@ export const useProjects = () => {
       return;
     }
 
-    setProjects((data as DbProject[]).map(mapDbToProject));
+    // Try to fetch submission data (will only succeed for admins due to RLS)
+    const { data: submissions } = await supabase
+      .from('project_submissions')
+      .select('project_id, submitter_email, consent_public_posting');
+
+    const submissionMap = new Map<string, DbProjectSubmission>();
+    if (submissions) {
+      submissions.forEach((s: DbProjectSubmission) => {
+        submissionMap.set(s.project_id, s);
+      });
+    }
+
+    setProjects((data as DbProject[]).map(db => mapDbToProject(db, submissionMap.get(db.id))));
     setIsLoading(false);
   };
 
@@ -68,8 +84,6 @@ export const useProjects = () => {
         category: project.category,
         featured: project.featured || false,
         status: 'pending',
-        submitter_email: project.submitterEmail || null,
-        consent_public_posting: project.consentPublicPosting || false,
       })
       .select()
       .single();
@@ -77,6 +91,21 @@ export const useProjects = () => {
     if (error) {
       console.error('Error adding project:', error);
       throw error;
+    }
+
+    // Insert PII into separate table
+    if (project.submitterEmail) {
+      const { error: subError } = await supabase
+        .from('project_submissions')
+        .insert({
+          project_id: data.id,
+          submitter_email: project.submitterEmail,
+          consent_public_posting: project.consentPublicPosting || false,
+        });
+
+      if (subError) {
+        console.error('Error saving submission details:', subError);
+      }
     }
 
     // Send notification email
@@ -92,10 +121,8 @@ export const useProjects = () => {
       });
     } catch (emailError) {
       console.error('Failed to send notification email:', emailError);
-      // Don't throw - project was saved successfully
     }
 
-    // Don't add to local state since it's pending and won't show for non-admins
     return data;
   };
 
