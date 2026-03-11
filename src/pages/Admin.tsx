@@ -17,7 +17,7 @@ import { AdminSettings } from '@/components/admin/AdminSettings';
 import { toast } from 'sonner';
 import { 
   Loader2, Pencil, Trash2, Star, ArrowLeft, LogOut, 
-  Search, Filter, ArrowUpDown, X, ExternalLink, Check, XCircle, Clock, FolderOpen, Mail, Copy, Download, Upload, FileSpreadsheet
+  Search, Filter, ArrowUpDown, X, ExternalLink, Check, XCircle, Clock, FolderOpen, Mail, Copy, Download, Upload, FileSpreadsheet, Settings
 } from 'lucide-react';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useDataExport } from '@/hooks/useDataExport';
