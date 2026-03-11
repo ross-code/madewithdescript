@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
 import { Project, ProjectCategory, ProjectStatus, categoryLabels, statusLabels, statusColors } from '@/types/project';
 import { ContactSubmissions } from '@/components/admin/ContactSubmissions';
+import { AdminSettings } from '@/components/admin/AdminSettings';
 import { toast } from 'sonner';
 import { 
   Loader2, Pencil, Trash2, Star, ArrowLeft, LogOut, 
