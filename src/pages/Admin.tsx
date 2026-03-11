@@ -13,10 +13,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
 import { Project, ProjectCategory, ProjectStatus, categoryLabels, statusLabels, statusColors } from '@/types/project';
 import { ContactSubmissions } from '@/components/admin/ContactSubmissions';
+import { AdminSettings } from '@/components/admin/AdminSettings';
 import { toast } from 'sonner';
 import { 
   Loader2, Pencil, Trash2, Star, ArrowLeft, LogOut, 
-  Search, Filter, ArrowUpDown, X, ExternalLink, Check, XCircle, Clock, FolderOpen, Mail, Copy, Download, Upload, FileSpreadsheet
+  Search, Filter, ArrowUpDown, X, ExternalLink, Check, XCircle, Clock, FolderOpen, Mail, Copy, Download, Upload, FileSpreadsheet, Settings
 } from 'lucide-react';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useDataExport } from '@/hooks/useDataExport';
@@ -276,6 +277,10 @@ const Admin = () => {
             <TabsTrigger value="messages" className="gap-2">
               <Mail className="w-4 h-4" />
               Messages
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="w-4 h-4" />
+              Settings
             </TabsTrigger>
           </TabsList>
 
@@ -565,6 +570,10 @@ const Admin = () => {
 
           <TabsContent value="messages">
             <ContactSubmissions />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <AdminSettings />
           </TabsContent>
         </Tabs>
       </main>
