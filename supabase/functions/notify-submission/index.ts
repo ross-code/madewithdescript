@@ -126,6 +126,8 @@ const handler = async (req: Request): Promise<Response> => {
     const safeUrl = escapeHtml(projectUrl || '');
     const safeCategory = escapeHtml(projectCategory || '');
     const safeId = escapeHtml(projectId);
+    const safeEmail = escapeHtml(submitterEmail || 'Not provided');
+    const safeImageUrl = escapeHtml(imageUrl || '');
 
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
