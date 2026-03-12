@@ -68,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { projectName, projectDescription, projectUrl, projectCategory, projectId }: SubmissionNotification = await req.json();
+    const { projectName, projectDescription, projectUrl, projectCategory, projectId, submitterEmail, imageUrl }: SubmissionNotification = await req.json();
 
     console.log("Sending notification email for project:", projectName);
 
