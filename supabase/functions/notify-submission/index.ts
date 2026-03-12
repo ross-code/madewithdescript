@@ -12,6 +12,8 @@ interface SubmissionNotification {
   projectUrl: string;
   projectCategory: string;
   projectId: string;
+  submitterEmail?: string;
+  imageUrl?: string;
 }
 
 // Simple in-memory rate limiting
