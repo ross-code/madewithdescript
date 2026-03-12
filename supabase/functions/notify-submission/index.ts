@@ -156,6 +156,14 @@ const handler = async (req: Request): Promise<Response> => {
                   <td style="color: #888; padding: 5px 0;">URL:</td>
                   <td><a href="${safeUrl}" style="color: #6366f1;">${safeUrl}</a></td>
                 </tr>
+                <tr>
+                  <td style="color: #888; padding: 5px 0;">Submitter Email:</td>
+                  <td style="color: #333; font-weight: 500;">${safeEmail}</td>
+                </tr>
+                ${safeImageUrl ? `<tr>
+                  <td style="color: #888; padding: 5px 0;">Image:</td>
+                  <td><a href="${safeImageUrl}" style="color: #6366f1;">View Image</a></td>
+                </tr>` : ''}
               </table>
             </div>
             
