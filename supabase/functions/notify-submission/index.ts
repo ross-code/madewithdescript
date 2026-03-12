@@ -12,6 +12,8 @@ interface SubmissionNotification {
   projectUrl: string;
   projectCategory: string;
   projectId: string;
+  submitterEmail?: string;
+  imageUrl?: string;
 }
 
 // Simple in-memory rate limiting
@@ -66,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { projectName, projectDescription, projectUrl, projectCategory, projectId }: SubmissionNotification = await req.json();
+    const { projectName, projectDescription, projectUrl, projectCategory, projectId, submitterEmail, imageUrl }: SubmissionNotification = await req.json();
 
     console.log("Sending notification email for project:", projectName);
 
@@ -124,6 +126,8 @@ const handler = async (req: Request): Promise<Response> => {
     const safeUrl = escapeHtml(projectUrl || '');
     const safeCategory = escapeHtml(projectCategory || '');
     const safeId = escapeHtml(projectId);
+    const safeEmail = escapeHtml(submitterEmail || 'Not provided');
+    const safeImageUrl = escapeHtml(imageUrl || '');
 
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -152,6 +156,14 @@ const handler = async (req: Request): Promise<Response> => {
                   <td style="color: #888; padding: 5px 0;">URL:</td>
                   <td><a href="${safeUrl}" style="color: #6366f1;">${safeUrl}</a></td>
                 </tr>
+                <tr>
+                  <td style="color: #888; padding: 5px 0;">Submitter Email:</td>
+                  <td style="color: #333; font-weight: 500;">${safeEmail}</td>
+                </tr>
+                ${safeImageUrl ? `<tr>
+                  <td style="color: #888; padding: 5px 0;">Image:</td>
+                  <td><a href="${safeImageUrl}" style="color: #6366f1;">View Image</a></td>
+                </tr>` : ''}
               </table>
             </div>
             

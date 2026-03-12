@@ -124,6 +124,8 @@ export const useProjects = () => {
           projectUrl: project.url,
           projectCategory: project.category,
           projectId: data.id,
+          submitterEmail: project.submitterEmail,
+          imageUrl: project.imageUrl,
         },
       });
     } catch (emailError) {
