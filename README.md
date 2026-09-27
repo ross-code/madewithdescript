@@ -92,6 +92,6 @@ The site is first live on its `*.workers.dev` URL; check it there.
 
 1. In Cloudflare DNS for `madewithdescript.com`, delete the A records that point at Lovable
    (for the apex and `www`).
-2. Uncomment the `routes` block in `wrangler.jsonc` and deploy again. Cloudflare creates the DNS
+2. Enable the `routes` block in `wrangler.jsonc` (done) and deploy again. Cloudflare creates the DNS
    records and certificates for both hostnames.
 3. Disconnect the domain in Lovable's project settings.
