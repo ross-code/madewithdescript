@@ -52,6 +52,8 @@ const Index = () => {
     url: string;
     imageUrl: string;
     category: ProjectCategory;
+    submitterEmail?: string;
+    consentPublicPosting?: boolean;
   }) => {
     await addProject(newProject);
   };

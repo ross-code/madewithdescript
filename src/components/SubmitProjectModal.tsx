@@ -22,7 +22,7 @@ interface SubmitProjectModalProps {
     category: ProjectCategory;
     submitterEmail?: string;
     consentPublicPosting?: boolean;
-  }) => void;
+  }) => Promise<void>;
 }
 
 export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectModalProps) => {
@@ -127,15 +127,21 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
       finalImageUrl = `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=400&fit=crop`;
     }
     
-    onSubmit({
-      name: formData.name,
-      description: formData.description,
-      url: formData.url,
-      imageUrl: finalImageUrl,
-      category: formData.category as ProjectCategory,
-      submitterEmail: formData.email,
-      consentPublicPosting: formData.consentPublicPosting,
-    });
+    try {
+      await onSubmit({
+        name: formData.name,
+        description: formData.description,
+        url: formData.url,
+        imageUrl: finalImageUrl,
+        category: formData.category as ProjectCategory,
+        submitterEmail: formData.email,
+        consentPublicPosting: formData.consentPublicPosting,
+      });
+    } catch {
+      setIsSubmitting(false);
+      toast.error('Something went wrong submitting your project. Please try again.');
+      return;
+    }
 
     setIsSubmitting(false);
     setIsSuccess(true);
