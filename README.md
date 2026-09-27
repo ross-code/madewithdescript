@@ -25,6 +25,7 @@ Both are public values (the anon key is protected by row-level security), so `.e
 | Function | Called when | Secrets |
 | --- | --- | --- |
 | `notify-submission` | A project is submitted; emails the admin | `RESEND_API_KEY`, `ADMIN_EMAIL`, optional `FROM_EMAIL` |
+| `notify-contact` | The contact form is sent; emails the admin (replies go to the sender) | `RESEND_API_KEY`, `ADMIN_EMAIL`, optional `FROM_EMAIL` |
 | `forward-submission-webhook` | A project is submitted; POSTs to the webhook URL set in Admin → Settings | none |
 
 Emails are sent from `FROM_EMAIL` (for example `Made with Descript <submissions@madewithdescript.com>`),
@@ -47,6 +48,7 @@ The site used to be hosted by Lovable, with its database in a Lovable-managed Su
    npx supabase db push                                # runs supabase/migrations/
    npx supabase functions deploy notify-submission --no-verify-jwt
    npx supabase functions deploy forward-submission-webhook --no-verify-jwt
+   npx supabase functions deploy notify-contact --no-verify-jwt
    npx supabase secrets set RESEND_API_KEY=... ADMIN_EMAIL=...
    ```
 
