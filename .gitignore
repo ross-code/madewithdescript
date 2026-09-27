@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase CLI link state
+supabase/.temp
+
+# Wrangler
+.wrangler

@@ -1,73 +1,97 @@
-# Welcome to your Lovable project
+# madewithdescript.com
 
-## Project info
+A community directory of projects made with Descript. Visitors browse and submit projects; an admin
+approves them at `/admin`.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+- **Frontend:** React + Vite + Tailwind (shadcn/ui), deployed as Cloudflare Workers static assets.
+  `worker.js` only redirects `www` to the bare domain; every other request is served from `dist/`
+  (unknown paths fall back to `index.html` so `/admin` and `/auth` work).
+- **Backend:** Supabase: Postgres (`projects`, `project_submissions`, `contact_submissions`,
+  `app_settings`, `user_roles`), the `project-images` storage bucket, email/password auth for the
+  admin, and edge functions in `supabase/functions/`.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm install
+npm run dev        # http://localhost:8080
+npm run build      # → dist/
+npm run deploy     # build + wrangler deploy
 ```
 
-**Edit a file directly in GitHub**
+The frontend reads `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from `.env` at build time.
+Both are public values (the anon key is protected by row-level security), so `.env` is committed.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Edge functions
 
-**Use GitHub Codespaces**
+| Function | Called when | Secrets |
+| --- | --- | --- |
+| `notify-submission` | A project is submitted; emails the admin | `RESEND_API_KEY`, `ADMIN_EMAIL` |
+| `forward-submission-webhook` | A project is submitted; POSTs to the webhook URL set in Admin → Settings | none |
+| `send-contact` | Not currently called by the site | `RESEND_API_KEY`, `ADMIN_EMAIL` |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Emails are sent from `onboarding@resend.dev`, which Resend only delivers to the Resend account's own
+address. To send from your own domain, verify it in Resend and change the `from` field.
 
-## What technologies are used for this project?
+## Moving off Lovable
 
-This project is built with:
+The site used to be hosted by Lovable, with its database in a Lovable-managed Supabase project.
+To finish moving:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### 1. Create the new Supabase project
 
-## How can I deploy this project?
+1. Create a project at [supabase.com](https://supabase.com) (the free tier is enough).
+2. Apply the schema, deploy the functions and set their secrets:
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+   ```sh
+   npx supabase login
+   npx supabase link --project-ref <new-project-ref>
+   npx supabase db push                                # runs supabase/migrations/
+   npx supabase functions deploy notify-submission --no-verify-jwt
+   npx supabase functions deploy forward-submission-webhook --no-verify-jwt
+   npx supabase functions deploy send-contact --no-verify-jwt
+   npx supabase secrets set RESEND_API_KEY=... ADMIN_EMAIL=...
+   ```
 
-## Can I connect a custom domain to my Lovable project?
+3. In **Authentication → URL Configuration**, set the Site URL to `https://madewithdescript.com`.
 
-Yes, you can!
+### 2. Copy the data
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+`scripts/migrate-data.mjs` signs in to the old project as the admin and copies every project
+(pending and rejected included), submitter emails, contact messages and settings, plus the uploaded
+images. It's safe to re-run. Try it with `--dry-run` first:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```sh
+OLD_SUPABASE_URL=<current VITE_SUPABASE_URL> \
+OLD_SUPABASE_ANON_KEY=<current VITE_SUPABASE_PUBLISHABLE_KEY> \
+OLD_ADMIN_EMAIL=... OLD_ADMIN_PASSWORD=... \
+NEW_SUPABASE_URL=https://<new-project-ref>.supabase.co \
+NEW_SUPABASE_SERVICE_ROLE_KEY=... \
+npm run migrate-data -- --dry-run
+```
+
+Run it once more without `--dry-run` just before switching DNS so late submissions come across too.
+
+### 3. Point the site at the new project and recreate the admin
+
+1. Put the new project's URL and anon key in `.env`, then commit.
+2. Deploy, open the site, and sign up at `/auth` with the admin email.
+3. Make that account an admin in the Supabase SQL editor:
+
+   ```sql
+   insert into public.user_roles (user_id, role)
+   select id, 'admin' from auth.users where email = 'you@example.com';
+   ```
+
+### 4. Deploy to Cloudflare
+
+Either run `npm run deploy` locally (after `npx wrangler login`), or in the Cloudflare dashboard go to
+**Workers & Pages → Create → Import a repository**, pick this repo, and use build command
+`npm run build` and deploy command `npx wrangler deploy`, so every push to `main` deploys.
+The site is first live on its `*.workers.dev` URL; check it there.
+
+### 5. Move the domain
+
+1. In Cloudflare DNS for `madewithdescript.com`, delete the A records that point at Lovable
+   (for the apex and `www`).
+2. Uncomment the `routes` block in `wrangler.jsonc` and deploy again. Cloudflare creates the DNS
+   records and certificates for both hostnames.
+3. Disconnect the domain in Lovable's project settings.

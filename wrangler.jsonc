@@ -1,0 +1,20 @@
+{
+  // Static React app on Cloudflare (Workers static assets). worker.js only redirects www to the bare domain.
+  "name": "madewithdescript",
+  "compatibility_date": "2026-09-27",
+  "main": "worker.js",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    // Client-side routes (/admin, /auth) fall back to index.html
+    "not_found_handling": "single-page-application"
+  },
+  // Attach the custom domains once the old Lovable A records are removed from DNS:
+  // "routes": [
+  //   { "pattern": "madewithdescript.com", "custom_domain": true },
+  //   { "pattern": "www.madewithdescript.com", "custom_domain": true }
+  // ],
+  "workers_dev": true,
+  "preview_urls": false
+}
