@@ -24,12 +24,12 @@ Both are public values (the anon key is protected by row-level security), so `.e
 
 | Function | Called when | Secrets |
 | --- | --- | --- |
-| `notify-submission` | A project is submitted; emails the admin | `RESEND_API_KEY`, `ADMIN_EMAIL` |
+| `notify-submission` | A project is submitted; emails the admin | `RESEND_API_KEY`, `ADMIN_EMAIL`, optional `FROM_EMAIL` |
 | `forward-submission-webhook` | A project is submitted; POSTs to the webhook URL set in Admin → Settings | none |
-| `send-contact` | Not currently called by the site | `RESEND_API_KEY`, `ADMIN_EMAIL` |
 
-Emails are sent from `onboarding@resend.dev`, which Resend only delivers to the Resend account's own
-address. To send from your own domain, verify it in Resend and change the `from` field.
+Emails are sent from `FROM_EMAIL` (for example `Made with Descript <submissions@madewithdescript.com>`),
+which needs the domain verified in Resend. Without it they come from `onboarding@resend.dev`, which Resend
+only delivers to the Resend account's own address.
 
 ## Moving off Lovable
 
@@ -47,7 +47,6 @@ The site used to be hosted by Lovable, with its database in a Lovable-managed Su
    npx supabase db push                                # runs supabase/migrations/
    npx supabase functions deploy notify-submission --no-verify-jwt
    npx supabase functions deploy forward-submission-webhook --no-verify-jwt
-   npx supabase functions deploy send-contact --no-verify-jwt
    npx supabase secrets set RESEND_API_KEY=... ADMIN_EMAIL=...
    ```
 

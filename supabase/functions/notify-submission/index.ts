@@ -6,15 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface SubmissionNotification {
-  projectName: string;
-  projectDescription: string;
-  projectUrl: string;
-  projectCategory: string;
-  projectId: string;
-  submitterEmail?: string;
-  imageUrl?: string;
-}
+// The site calls this right after inserting the project, so anything older is a replay.
+const MAX_SUBMISSION_AGE_MS = 15 * 60 * 1000;
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Simple in-memory rate limiting
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -68,38 +63,39 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { projectName, projectDescription, projectUrl, projectCategory, projectId, submitterEmail, imageUrl }: SubmissionNotification = await req.json();
-
-    console.log("Sending notification email for project:", projectName);
-
-    // Validate required fields
-    if (!projectName || !projectId) {
+    // Only the project id is taken from the request. The email is built from the database,
+    // so callers can't send made-up content to the admin.
+    const { projectId } = await req.json().catch(() => ({}));
+    if (typeof projectId !== "string" || !UUID_PATTERN.test(projectId)) {
       return new Response(
-        JSON.stringify({ error: "Project name and ID are required" }),
+        JSON.stringify({ error: "A valid projectId is required" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Verify project exists in database to prevent spam
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      const { data: project, error: projectError } = await supabase
-        .from("projects")
-        .select("id")
-        .eq("id", projectId)
-        .single();
-      
-      if (projectError || !project) {
-        console.error("Project validation failed:", projectError);
-        return new Response(
-          JSON.stringify({ error: "Invalid project reference" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    const { data: project } = await supabase
+      .from("projects")
+      .select("id, name, description, url, category, image_url, status, created_at")
+      .eq("id", projectId)
+      .maybeSingle();
+
+    const isFresh = project && Date.now() - new Date(project.created_at).getTime() < MAX_SUBMISSION_AGE_MS;
+    if (!project || project.status !== "pending" || !isFresh) {
+      return new Response(
+        JSON.stringify({ error: "No new submission with that id" }),
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
+
+    const { data: submission } = await supabase
+      .from("project_submissions")
+      .select("submitter_email")
+      .eq("project_id", projectId)
+      .maybeSingle();
+
+    console.log("Sending notification email for project:", project.id);
 
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const adminEmail = Deno.env.get("ADMIN_EMAIL");
@@ -121,13 +117,13 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Escape HTML entities for safe email rendering
-    const safeName = escapeHtml(projectName);
-    const safeDescription = escapeHtml(projectDescription || '');
-    const safeUrl = escapeHtml(projectUrl || '');
-    const safeCategory = escapeHtml(projectCategory || '');
-    const safeId = escapeHtml(projectId);
-    const safeEmail = escapeHtml(submitterEmail || 'Not provided');
-    const safeImageUrl = escapeHtml(imageUrl || '');
+    const safeName = escapeHtml(project.name);
+    const safeDescription = escapeHtml(project.description || '');
+    const safeUrl = escapeHtml(project.url || '');
+    const safeCategory = escapeHtml(project.category || '');
+    const safeId = escapeHtml(project.id);
+    const safeEmail = escapeHtml(submission?.submitter_email || 'Not provided');
+    const safeImageUrl = escapeHtml(project.image_url || '');
 
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -136,9 +132,9 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Project Submissions <onboarding@resend.dev>",
+        from: Deno.env.get("FROM_EMAIL") || "Project Submissions <onboarding@resend.dev>",
         to: [adminEmail],
-        subject: `New Project Submission: ${safeName}`,
+        subject: `New Project Submission: ${project.name}`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <h1 style="color: #333; border-bottom: 2px solid #6366f1; padding-bottom: 10px;">New Project Submission</h1>
@@ -190,7 +186,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    return new Response(JSON.stringify({ success: true, emailResponse: result }), {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
