@@ -33,8 +33,8 @@ address. To send from your own domain, verify it in Resend and change the `from`
 
 ## Moving off Lovable
 
-The site used to be hosted by Lovable, with its database in a Lovable-managed Supabase project.
-To finish moving:
+The site used to be hosted by Lovable, with its database in a Lovable-managed Supabase project
+(`cgowrjsjscrteoiunzoz`). It now uses its own project, `oduvjdegajuavttqmwbb`. Steps to move:
 
 ### 1. Create the new Supabase project
 
