@@ -137,16 +137,9 @@ export const useProjects = () => {
 
     // Forward to webhook (Zapier, Make, etc.)
     try {
+      // The function reads the submission back from the database, so only the id is needed
       await supabase.functions.invoke('forward-submission-webhook', {
-        body: {
-          projectName: project.name,
-          projectDescription: project.description,
-          projectUrl: project.url,
-          projectCategory: project.category,
-          projectId: id,
-          submitterEmail: project.submitterEmail,
-          imageUrl: project.imageUrl,
-        },
+        body: { projectId: id },
       });
     } catch (webhookError) {
       console.error('Failed to forward to webhook:', webhookError);
