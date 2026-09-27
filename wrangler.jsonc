@@ -10,11 +10,10 @@
     // Client-side routes (/admin, /auth) fall back to index.html
     "not_found_handling": "single-page-application"
   },
-  // Attach the custom domains once the old Lovable A records are removed from DNS:
-  // "routes": [
-  //   { "pattern": "madewithdescript.com", "custom_domain": true },
-  //   { "pattern": "www.madewithdescript.com", "custom_domain": true }
-  // ],
+  "routes": [
+    { "pattern": "madewithdescript.com", "custom_domain": true },
+    { "pattern": "www.madewithdescript.com", "custom_domain": true }
+  ],
   "workers_dev": true,
   "preview_urls": false
 }
