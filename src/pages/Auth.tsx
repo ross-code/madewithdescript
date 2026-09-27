@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,14 +18,8 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, signUp, user, isLoading } = useAuth();
+  const { signIn, signUp, signOut, user, isAdmin, isLoading } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user && !isLoading) {
-      navigate('/');
-    }
-  }, [user, isLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +50,7 @@ const Auth = () => {
     }
 
     if (!isLogin) {
-      toast.success('Account created! You can now sign in.');
+      toast.success('Account created. Check your email to confirm it, then sign in.');
       setIsLogin(true);
     } else {
       navigate('/');
@@ -71,11 +65,35 @@ const Auth = () => {
     );
   }
 
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-8 text-center">
+          <div>
+            <h1 className="font-serif text-4xl font-normal">You're signed in</h1>
+            <p className="mt-2 text-muted-foreground">
+              {user.email}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            {isAdmin && (
+              <Button onClick={() => navigate('/admin')} className="w-full">Go to admin</Button>
+            )}
+            <Button variant="outline" onClick={() => signOut()} className="w-full">Sign out</Button>
+          </div>
+          <Link to="/" className="inline-block text-sm text-muted-foreground hover:text-foreground transition-colors">
+            ← Back to home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="font-display text-3xl font-bold gradient-text">
+          <h1 className="font-serif text-4xl font-normal">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h1>
           <p className="mt-2 text-muted-foreground">
