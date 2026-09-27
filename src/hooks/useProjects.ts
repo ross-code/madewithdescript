@@ -50,6 +50,7 @@ export const useProjects = () => {
     if (error) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to load projects');
+      setIsLoading(false);
       return;
     }
 
@@ -81,9 +82,13 @@ export const useProjects = () => {
   }, [fetchProjects]);
 
   const addProject = async (project: Omit<Project, 'id' | 'createdAt' | 'status'>) => {
-    const { data, error } = await supabase
+    // Generate the id client-side: anonymous submitters can't SELECT pending
+    // rows under RLS, so insert(...).select() would fail for them.
+    const id = crypto.randomUUID();
+    const { error } = await supabase
       .from('projects')
       .insert({
+        id,
         name: project.name,
         description: project.description,
         url: project.url,
@@ -91,9 +96,7 @@ export const useProjects = () => {
         category: project.category,
         featured: project.featured || false,
         status: 'pending',
-      })
-      .select()
-      .single();
+      });
 
     if (error) {
       console.error('Error adding project:', error);
@@ -105,7 +108,7 @@ export const useProjects = () => {
       const { error: subError } = await supabase
         .from('project_submissions')
         .insert({
-          project_id: data.id,
+          project_id: id,
           submitter_email: project.submitterEmail,
           consent_public_posting: project.consentPublicPosting || false,
         });
@@ -123,7 +126,7 @@ export const useProjects = () => {
           projectDescription: project.description,
           projectUrl: project.url,
           projectCategory: project.category,
-          projectId: data.id,
+          projectId: id,
           submitterEmail: project.submitterEmail,
           imageUrl: project.imageUrl,
         },
@@ -140,7 +143,7 @@ export const useProjects = () => {
           projectDescription: project.description,
           projectUrl: project.url,
           projectCategory: project.category,
-          projectId: data.id,
+          projectId: id,
           submitterEmail: project.submitterEmail,
           imageUrl: project.imageUrl,
         },
@@ -149,7 +152,7 @@ export const useProjects = () => {
       console.error('Failed to forward to webhook:', webhookError);
     }
 
-    return data;
+    return id;
   };
 
   const updateProject = async (id: string, updates: Partial<Project>) => {

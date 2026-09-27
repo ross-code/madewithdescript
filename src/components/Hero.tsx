@@ -1,63 +1,67 @@
 import { Button } from '@/components/ui/button';
-import { Plus, Sparkles } from 'lucide-react';
+import { ArrowDown, Plus } from 'lucide-react';
+import { Project } from '@/types/project';
 
 interface HeroProps {
   onSubmitClick: () => void;
   projectCount: number;
+  projects: Project[];
 }
 
-export const Hero = ({ onSubmitClick, projectCount }: HeroProps) => {
+export const Hero = ({ onSubmitClick, projectCount, projects }: HeroProps) => {
+  // Featured projects first, then the most recent, for the mosaic
+  const mosaic = [...projects]
+    .sort((a, b) => Number(!!b.featured) - Number(!!a.featured))
+    .slice(0, 9);
+
   return (
-    <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-glow" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/5 to-accent/5 rounded-full blur-3xl" />
-      </div>
-      
-      {/* Decorative grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
-
-      <div className="relative z-10 container mx-auto px-4 text-center">
+    <section className="container mx-auto px-4 pb-16 pt-14 md:pb-24 md:pt-20">
+      <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
         <div className="animate-slide-up">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">
-              <span className="text-foreground font-semibold">{projectCount}</span> projects showcased
-            </span>
-          </div>
-
-          <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight">
-            <span className="gradient-text">Made With</span>
-            <br />
-            <span className="text-foreground">Descript</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            A curated directory of podcasts, YouTube channels, courses, and creative projects 
-            made using Descript. Submit your work and get featured.
+          <p className="mb-6 font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+            A community directory&nbsp;·&nbsp;
+            <span className="text-foreground">{projectCount} projects</span>
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="xl" 
-              variant="gradient" 
-              onClick={onSubmitClick}
-              className="group"
-            >
-              <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
-              Submit Your Project
+          <h1 className="mb-6 font-serif text-[3.25rem] font-normal leading-[0.95] tracking-tight text-foreground sm:text-7xl lg:text-[5.5rem]">
+            Podcasts, channels &amp; courses{' '}
+            <em className="text-accent">made with Descript.</em>
+          </h1>
+
+          <p className="mb-10 max-w-xl text-lg leading-relaxed text-muted-foreground">
+            Browse real work from creators who edit with Descript, then add your own.
+            Submissions are free and reviewed before they go live.
+          </p>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button size="lg" onClick={onSubmitClick}>
+              <Plus />
+              Submit your project
             </Button>
-            <Button 
-              size="xl" 
-              variant="glass"
+            <Button
+              size="lg"
+              variant="ghost"
               onClick={() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' })}
             >
-              Explore Projects
+              Browse the directory
+              <ArrowDown />
             </Button>
           </div>
         </div>
+
+        {mosaic.length > 0 && (
+          <div className="grid grid-cols-3 gap-3 sm:gap-4" aria-hidden="true">
+            {mosaic.map((project, i) => (
+              <div
+                key={project.id}
+                className="aspect-square overflow-hidden rounded-lg border border-border bg-card animate-fade-in"
+                style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
+              >
+                <img src={project.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
