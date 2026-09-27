@@ -46,9 +46,12 @@ export const ContactForm = () => {
     setIsSubmitting(true);
 
     try {
+      // Generate the id client-side: visitors can't read contact_submissions back under RLS
+      const id = crypto.randomUUID();
       const { error } = await supabase
         .from('contact_submissions')
         .insert({
+          id,
           name: result.data.name,
           email: result.data.email,
           subject: result.data.subject || null,
@@ -56,6 +59,11 @@ export const ContactForm = () => {
         });
 
       if (error) throw error;
+
+      // Email the admin. The message is already saved, so a failed email isn't shown to the visitor.
+      supabase.functions.invoke('notify-contact', { body: { contactId: id } }).catch((emailError) => {
+        console.error('Failed to send contact notification:', emailError);
+      });
 
       setIsSuccess(true);
       setFormData({ name: '', email: '', subject: '', message: '' });
