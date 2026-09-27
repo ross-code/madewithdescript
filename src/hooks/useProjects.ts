@@ -121,15 +121,7 @@ export const useProjects = () => {
     // Send notification email
     try {
       await supabase.functions.invoke('notify-submission', {
-        body: {
-          projectName: project.name,
-          projectDescription: project.description,
-          projectUrl: project.url,
-          projectCategory: project.category,
-          projectId: id,
-          submitterEmail: project.submitterEmail,
-          imageUrl: project.imageUrl,
-        },
+        body: { projectId: id },
       });
     } catch (emailError) {
       console.error('Failed to send notification email:', emailError);
