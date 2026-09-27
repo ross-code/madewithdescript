@@ -50,6 +50,7 @@ export const useProjects = () => {
     if (error) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to load projects');
+      setIsLoading(false);
       return;
     }
 

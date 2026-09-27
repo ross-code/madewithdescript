@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -163,20 +163,23 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg glass border-border max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="font-display text-2xl gradient-text">
-            Submit Your Project
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-card">
+        <DialogHeader className="text-left">
+          <DialogTitle className="font-serif text-3xl font-normal tracking-tight">
+            Submit your project
           </DialogTitle>
+          <DialogDescription>
+            Tell us what you made with Descript. We review every submission before it goes live.
+          </DialogDescription>
         </DialogHeader>
 
         {isSuccess ? (
           <div className="py-12 text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
-              <CheckCircle2 className="w-10 h-10 text-primary" />
+            <div className="w-12 h-12 mx-auto mb-5 rounded-full bg-secondary flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6 text-foreground" />
             </div>
-            <h3 className="text-xl font-display font-semibold text-foreground mb-2">
-              Project Submitted!
+            <h3 className="font-serif text-3xl font-normal text-foreground mb-2">
+              Thanks, it's in
             </h3>
             <p className="text-muted-foreground">
               Your project has been submitted for review. Once approved, it will appear on the showcase.
@@ -191,7 +194,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="My Awesome Project"
-                className="glass border-border"
+                className="bg-background"
               />
             </div>
 
@@ -202,7 +205,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Tell us about your project..."
-                className="glass border-border min-h-[100px]"
+                className="bg-background min-h-[100px]"
               />
             </div>
 
@@ -214,7 +217,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
                 value={formData.url}
                 onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
                 placeholder="https://example.com"
-                className="glass border-border"
+                className="bg-background"
               />
             </div>
 
@@ -273,7 +276,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
                   ) : (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                      className="border border-dashed border-input bg-background rounded-lg p-6 text-center cursor-pointer hover:border-foreground/40 transition-colors"
                     >
                       <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                       <p className="text-sm text-muted-foreground">
@@ -300,7 +303,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
                     value={formData.imageUrl}
                     onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
                     placeholder="https://example.com/image.jpg"
-                    className="glass border-border"
+                    className="bg-background"
                   />
                   {formData.imageUrl && (
                     <img
@@ -325,10 +328,10 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
                 value={formData.category}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as ProjectCategory }))}
               >
-                <SelectTrigger className="glass border-border">
+                <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
-                <SelectContent className="glass border-border">
+                <SelectContent>
                   {(Object.keys(categoryLabels) as ProjectCategory[]).map((category) => (
                     <SelectItem key={category} value={category}>
                       {categoryLabels[category]}
@@ -346,14 +349,14 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 placeholder="your@email.com"
-                className="glass border-border"
+                className="bg-background"
               />
               <p className="text-xs text-muted-foreground">
                 We'll use this to notify you about your submission status
               </p>
             </div>
 
-            <div className="flex items-start gap-3 p-4 rounded-lg border border-border bg-muted/30">
+            <div className="flex items-start gap-3 p-4 rounded-lg border border-border bg-secondary/50">
               <Checkbox
                 id="consent"
                 checked={formData.consentPublicPosting}
@@ -381,7 +384,6 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
               </Button>
               <Button
                 type="submit"
-                variant="gradient"
                 disabled={isSubmitting || isUploading}
                 className="flex-1"
               >
@@ -391,7 +393,7 @@ export const SubmitProjectModal = ({ isOpen, onClose, onSubmit }: SubmitProjectM
                     {isUploading ? 'Uploading...' : 'Submitting...'}
                   </>
                 ) : (
-                  'Submit Project'
+                  'Submit project'
                 )}
               </Button>
             </div>

@@ -7,9 +7,10 @@ import { ProjectGrid } from '@/components/ProjectGrid';
 import { SubmitProjectModal } from '@/components/SubmitProjectModal';
 import { ContactForm } from '@/components/ContactForm';
 import { Footer } from '@/components/Footer';
+import { HowItWorks } from '@/components/HowItWorks';
 import { useProjects } from '@/hooks/useProjects';
 import { ProjectCategory } from '@/types/project';
-import { Loader2, MessageCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const { projects, isLoading, addProject } = useProjects();
@@ -61,48 +62,51 @@ const Index = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
+  const openSubmit = () => setIsModalOpen(true);
+
   return (
     <div className="min-h-screen bg-background">
-      <Header onSubmitClick={() => setIsModalOpen(true)} />
-      
-      <main className="pt-16">
-        <Hero 
-          onSubmitClick={() => setIsModalOpen(true)} 
-          projectCount={projects.length}
-        />
+      <Header onSubmitClick={openSubmit} />
 
-        <section id="projects" className="container mx-auto px-4 py-16">
-          <div className="space-y-8">
-            <SearchBar value={searchQuery} onChange={setSearchQuery} />
-            
-            <CategoryFilter
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              categoryCounts={categoryCounts}
-            />
+      <main className="pt-16">
+        <Hero onSubmitClick={openSubmit} projectCount={projects.length} projects={projects} />
+
+        <section id="projects" className="scroll-mt-16 border-t border-border">
+          <div className="container mx-auto px-4 py-16 md:py-20">
+            <div className="mb-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <h2 className="font-serif text-4xl font-normal md:text-5xl">The directory</h2>
+              <p className="font-mono text-xs uppercase tracking-[0.12em] text-muted-foreground" aria-live="polite">
+                Showing {filteredProjects.length} of {projects.length}
+              </p>
+            </div>
+
+            <div className="sticky top-16 z-30 -mx-4 mb-10 flex flex-col gap-3 border-b border-border bg-background/90 px-4 py-3 backdrop-blur-md md:flex-row md:items-center md:justify-between">
+              <CategoryFilter
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                categoryCounts={categoryCounts}
+              />
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            </div>
 
             <ProjectGrid projects={filteredProjects} />
           </div>
         </section>
 
-        {/* Contact Section */}
-        <section id="contact" className="container mx-auto px-4 py-16">
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-border mb-4">
-                <MessageCircle className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-muted-foreground">Get in Touch</span>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
-                Have Questions?
-              </h2>
-              <p className="text-muted-foreground">
-                We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+        <HowItWorks onSubmitClick={openSubmit} />
+
+        <section id="contact" className="scroll-mt-16 border-t border-border">
+          <div className="container mx-auto grid gap-10 px-4 py-16 md:py-24 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
+            <div>
+              <p className="mb-4 font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">Contact</p>
+              <h2 className="mb-4 font-serif text-4xl font-normal md:text-5xl">Questions?</h2>
+              <p className="max-w-sm leading-relaxed text-muted-foreground">
+                Want to update a listing, report a broken link, or just say hi? Send a note and we'll get back to you.
               </p>
             </div>
             <ContactForm />

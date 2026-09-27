@@ -73,12 +73,12 @@ export const ContactForm = () => {
 
   if (isSuccess) {
     return (
-      <div className="glass border border-border rounded-xl p-8 text-center">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center">
-          <CheckCircle2 className="w-8 h-8 text-primary" />
+      <div className="rounded-xl border border-border bg-card p-10 text-center">
+        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
+          <CheckCircle2 className="w-6 h-6 text-foreground" />
         </div>
-        <h3 className="text-xl font-display font-semibold text-foreground mb-2">
-          Message Sent!
+        <h3 className="font-serif text-3xl font-normal text-foreground mb-2">
+          Message sent
         </h3>
         <p className="text-muted-foreground">
           Thank you for reaching out. We'll get back to you soon.
@@ -88,7 +88,7 @@ export const ContactForm = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="glass border border-border rounded-xl p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-6 md:p-8 space-y-5">
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="contact-name">Name *</Label>
@@ -97,7 +97,7 @@ export const ContactForm = () => {
             value={formData.name}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             placeholder="Your name"
-            className="glass border-border"
+            className="bg-background"
           />
           {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
         </div>
@@ -109,7 +109,7 @@ export const ContactForm = () => {
             value={formData.email}
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
             placeholder="you@example.com"
-            className="glass border-border"
+            className="bg-background"
           />
           {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
         </div>
@@ -122,7 +122,7 @@ export const ContactForm = () => {
           value={formData.subject}
           onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
           placeholder="What's this about?"
-          className="glass border-border"
+          className="bg-background"
         />
         {errors.subject && <p className="text-xs text-destructive">{errors.subject}</p>}
       </div>
@@ -134,7 +134,7 @@ export const ContactForm = () => {
           value={formData.message}
           onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
           placeholder="Your message..."
-          className="glass border-border min-h-[120px]"
+          className="bg-background min-h-[140px]"
         />
         {errors.message && <p className="text-xs text-destructive">{errors.message}</p>}
         <p className="text-xs text-muted-foreground text-right">
@@ -142,16 +142,16 @@ export const ContactForm = () => {
         </p>
       </div>
       
-      <Button type="submit" variant="gradient" disabled={isSubmitting} className="w-full">
+      <Button type="submit" size="lg" disabled={isSubmitting} className="w-full sm:w-auto">
         {isSubmitting ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            <Loader2 className="animate-spin" />
             Sending...
           </>
         ) : (
           <>
-            <Send className="w-4 h-4 mr-2" />
-            Send Message
+            <Send />
+            Send message
           </>
         )}
       </Button>

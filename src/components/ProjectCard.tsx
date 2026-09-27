@@ -1,5 +1,5 @@
 import { Project, categoryLabels } from '@/types/project';
-import { ExternalLink, Star } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ProjectCardProps {
@@ -7,12 +7,12 @@ interface ProjectCardProps {
   index: number;
 }
 
-const categoryColorClasses: Record<string, string> = {
-  podcast: 'bg-category-podcast/20 text-category-podcast border-category-podcast/30',
-  youtube: 'bg-category-youtube/20 text-category-youtube border-category-youtube/30',
-  course: 'bg-category-course/20 text-category-course border-category-course/30',
-  tool: 'bg-category-tool/20 text-category-tool border-category-tool/30',
-  other: 'bg-category-other/20 text-category-other border-category-other/30',
+const categoryDotClasses: Record<string, string> = {
+  podcast: 'bg-category-podcast',
+  youtube: 'bg-category-youtube',
+  course: 'bg-category-course',
+  tool: 'bg-category-tool',
+  other: 'bg-category-other',
 };
 
 export const ProjectCard = ({ project, index }: ProjectCardProps) => {
@@ -21,58 +21,41 @@ export const ProjectCard = ({ project, index }: ProjectCardProps) => {
       href={project.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block animate-fade-in"
-      style={{ animationDelay: `${index * 0.05}s` }}
+      className="group block animate-fade-in rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+      style={{ animationDelay: `${Math.min(index, 12) * 40}ms`, animationFillMode: 'both' }}
     >
-      <article className="relative h-full rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-card-hover glass">
-        {/* Featured badge */}
-        {project.featured && (
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium shadow-lg">
-            <Star className="w-3 h-3 fill-current" />
-            Featured
-          </div>
-        )}
-
-        {/* Image container */}
-        <div className="relative aspect-square overflow-hidden">
+      <article className="flex h-full flex-col">
+        <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-card transition-shadow duration-300 group-hover:shadow-card-hover">
           <img
             src={project.imageUrl}
             alt={project.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          
-          {/* Hover overlay */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-            <div className="p-3 rounded-full bg-primary text-primary-foreground shadow-xl transform scale-75 group-hover:scale-100 transition-transform duration-300">
-              <ExternalLink className="w-5 h-5" />
-            </div>
-          </div>
+          {project.featured && (
+            <span className="absolute left-3 top-3 rounded-full bg-background/95 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-foreground shadow-sm">
+              Featured
+            </span>
+          )}
         </div>
 
-        {/* Content */}
-        <div className="p-5">
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <h3 className="font-display font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
+        <div className="flex flex-1 flex-col pt-4">
+          <div className="mb-1.5 flex items-start justify-between gap-3">
+            <h3 className="line-clamp-1 text-base font-medium text-foreground">
               {project.name}
             </h3>
+            <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
           </div>
-          
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+
+          <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
             {project.description}
           </p>
 
-          <div className="flex items-center justify-between">
-            <span className={cn(
-              "px-3 py-1 rounded-lg text-xs font-medium border",
-              categoryColorClasses[project.category]
-            )}>
-              {categoryLabels[project.category]}
-            </span>
-            
-            <span className="text-xs text-muted-foreground">
-              {project.createdAt.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-            </span>
+          <div className="mt-auto flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
+            <span className={cn('h-1.5 w-1.5 rounded-full', categoryDotClasses[project.category])} />
+            <span className="text-foreground/80">{categoryLabels[project.category]}</span>
+            <span aria-hidden="true">·</span>
+            <span>{project.createdAt.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
           </div>
         </div>
       </article>
